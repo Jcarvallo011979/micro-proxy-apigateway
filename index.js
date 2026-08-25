@@ -5,16 +5,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const TARGET_BASE_URL = 'https://api.apigateway.cl';
+// Se utiliza app.apigateway.cl que es el host estándar de API Gateway Chile
+const TARGET_BASE_URL = 'https://app.apigateway.cl/api/v2';
+
+app.get('/health', (req, res) => res.json({ status: 'ok', proxy: 'active' }));
 
 app.all('*', async (req, res) => {
   try {
-    // Reconstruir la URL de destino final en API Gateway
     const targetUrl = `${TARGET_BASE_URL}${req.originalUrl}`;
     
-    // Clonar las cabeceras originales omitiendo host para no romper la firma SSL
+    // Clonar headers limpios
     const headers = { ...req.headers };
     delete headers.host;
+    delete headers['content-length'];
+
+    // Asegurar que el Host coincida con el servidor destino
+    headers['Host'] = 'app.apigateway.cl';
 
     const fetchOptions = {
       method: req.method,
